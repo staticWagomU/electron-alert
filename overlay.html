@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>アラーム</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        background: transparent;
+        overflow: hidden;
+      }
+
+      .overlay {
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.88);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue',
+          'Hiragino Sans', 'Yu Gothic UI', sans-serif;
+        -webkit-app-region: no-drag;
+      }
+
+      #message {
+        color: #ffffff;
+        font-size: clamp(56px, 7vw, 128px);
+        font-weight: 700;
+        text-align: center;
+        max-width: 80%;
+        line-height: 1.3;
+        word-break: break-word;
+        letter-spacing: 0.02em;
+        white-space: pre-wrap;
+        /* 視認性を高める影 */
+        text-shadow:
+          0 2px 4px rgba(0, 0, 0, 0.4),
+          0 8px 32px rgba(0, 0, 0, 0.3);
+        opacity: 0;
+        transform: translateY(16px);
+        animation: fadeIn 0.4s ease forwards;
+      }
+
+      #dismiss {
+        margin-top: 72px;
+        padding: 18px 64px;
+        background: #ffffff;
+        color: #111111;
+        font-size: 20px;
+        font-weight: 600;
+        border: none;
+        border-radius: 100px;
+        cursor: pointer;
+        transition:
+          transform 0.15s ease,
+          opacity 0.15s ease;
+        opacity: 0;
+        animation: fadeIn 0.4s ease 0.2s forwards;
+        font-family: inherit;
+        letter-spacing: 0.04em;
+      }
+
+      #dismiss:hover {
+        transform: scale(1.04);
+        opacity: 0.92 !important;
+      }
+
+      #dismiss:active {
+        transform: scale(0.97);
+      }
+
+      @keyframes fadeIn {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="overlay">
+      <div id="message">...</div>
+      <button id="dismiss">閉じる</button>
+    </div>
+
+    <script>
+      window.electronAPI.onShowText((text) => {
+        document.getElementById('message').textContent = text;
+      });
+
+      document.getElementById('dismiss').addEventListener('click', () => {
+        window.electronAPI.dismiss();
+      });
+
+      // ESCキーでも閉じられるようにする
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          window.electronAPI.dismiss();
+        }
+      });
+    </script>
+  </body>
+</html>

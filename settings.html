@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>アラーム設定</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue',
+          'Hiragino Sans', 'Yu Gothic UI', sans-serif;
+        background: #f2f2f7;
+        color: #1c1c1e;
+        font-size: 14px;
+        padding: 24px;
+        min-height: 100vh;
+      }
+
+      h1 {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 20px;
+        color: #1c1c1e;
+      }
+
+      .alarm-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .alarm-item {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 14px 16px;
+        display: grid;
+        grid-template-columns: auto auto 1fr auto;
+        align-items: start;
+        gap: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+
+      .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+
+      .field-label {
+        font-size: 11px;
+        color: #8e8e93;
+        font-weight: 500;
+        letter-spacing: 0.02em;
+      }
+
+      .time-row {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .time-sep {
+        font-size: 16px;
+        font-weight: 700;
+        color: #3c3c43;
+        line-height: 1;
+      }
+
+      input[type='number'],
+      input[type='text'],
+      textarea {
+        border: 1.5px solid #e5e5ea;
+        border-radius: 8px;
+        padding: 6px 8px;
+        font-size: 14px;
+        font-family: inherit;
+        outline: none;
+        background: #fafafa;
+        transition: border-color 0.15s;
+        color: #1c1c1e;
+      }
+
+      input[type='number']:focus,
+      input[type='text']:focus,
+      textarea:focus {
+        border-color: #007aff;
+        background: #ffffff;
+      }
+
+      textarea {
+        resize: vertical;
+        min-height: 36px;
+        line-height: 1.5;
+      }
+
+      .input-hour,
+      .input-minute {
+        width: 52px;
+        text-align: center;
+      }
+
+      .input-window {
+        width: 52px;
+        text-align: center;
+      }
+
+      .input-text {
+        width: 100%;
+      }
+
+      .field-text {
+        flex: 1;
+      }
+
+      .delete-btn {
+        background: none;
+        border: none;
+        color: #ff3b30;
+        font-size: 22px;
+        cursor: pointer;
+        padding: 4px 6px;
+        border-radius: 6px;
+        line-height: 1;
+        transition: background 0.15s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .delete-btn:hover {
+        background: rgba(255, 59, 48, 0.1);
+      }
+
+      .actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .btn {
+        border: none;
+        border-radius: 10px;
+        padding: 10px 20px;
+        font-size: 14px;
+        font-family: inherit;
+        cursor: pointer;
+        font-weight: 500;
+        transition: opacity 0.15s;
+      }
+
+      .btn:hover {
+        opacity: 0.85;
+      }
+
+      .btn-add {
+        background: #e9e9eb;
+        color: #1c1c1e;
+      }
+
+      .btn-save {
+        background: #007aff;
+        color: #ffffff;
+        font-weight: 600;
+        padding: 10px 28px;
+      }
+
+      .saved-msg {
+        color: #34c759;
+        font-size: 13px;
+        font-weight: 500;
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+
+      .saved-msg.visible {
+        opacity: 1;
+      }
+
+      .hint {
+        margin-top: 16px;
+        font-size: 12px;
+        color: #8e8e93;
+        line-height: 1.6;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>アラーム設定</h1>
+
+    <div class="alarm-list" id="alarm-list"></div>
+
+    <div class="actions">
+      <button class="btn btn-add" id="btn-add">＋ 追加</button>
+      <button class="btn btn-save" id="btn-save">保存</button>
+      <span class="saved-msg" id="saved-msg">保存しました ✓</span>
+    </div>
+
+    <p class="hint">
+      ±分は指定時刻からランダムにずれる幅です。アプリ起動時または保存後に再スケジュールされます。
+    </p>
+
+    <script>
+      let alarms = [];
+      let nextId = 1;
+
+      async function init() {
+        alarms = await window.electronAPI.getAlarms();
+        nextId =
+          alarms.length > 0 ? Math.max(...alarms.map((a) => a.id)) + 1 : 1;
+        render();
+      }
+
+      function render() {
+        const list = document.getElementById('alarm-list');
+        list.innerHTML = '';
+
+        alarms.forEach((alarm, index) => {
+          const item = document.createElement('div');
+          item.className = 'alarm-item';
+
+          // 時刻フィールド
+          const timeGroup = document.createElement('div');
+          timeGroup.className = 'field-group';
+          const timeLabel = document.createElement('div');
+          timeLabel.className = 'field-label';
+          timeLabel.textContent = '時刻';
+          const timeRow = document.createElement('div');
+          timeRow.className = 'time-row';
+
+          const hourInput = document.createElement('input');
+          hourInput.type = 'number';
+          hourInput.className = 'input-hour';
+          hourInput.min = '0';
+          hourInput.max = '23';
+          hourInput.value = alarm.hour;
+          hourInput.addEventListener('change', () => {
+            alarms[index].hour = Math.max(
+              0,
+              Math.min(23, parseInt(hourInput.value) || 0)
+            );
+          });
+
+          const sep = document.createElement('span');
+          sep.className = 'time-sep';
+          sep.textContent = ':';
+
+          const minuteInput = document.createElement('input');
+          minuteInput.type = 'number';
+          minuteInput.className = 'input-minute';
+          minuteInput.min = '0';
+          minuteInput.max = '59';
+          minuteInput.value = String(alarm.minute).padStart(2, '0');
+          minuteInput.addEventListener('change', () => {
+            alarms[index].minute = Math.max(
+              0,
+              Math.min(59, parseInt(minuteInput.value) || 0)
+            );
+          });
+
+          timeRow.appendChild(hourInput);
+          timeRow.appendChild(sep);
+          timeRow.appendChild(minuteInput);
+          timeGroup.appendChild(timeLabel);
+          timeGroup.appendChild(timeRow);
+
+          // ±分フィールド
+          const windowGroup = document.createElement('div');
+          windowGroup.className = 'field-group';
+          const windowLabel = document.createElement('div');
+          windowLabel.className = 'field-label';
+          windowLabel.textContent = '±分';
+          const windowInput = document.createElement('input');
+          windowInput.type = 'number';
+          windowInput.className = 'input-window';
+          windowInput.min = '0';
+          windowInput.max = '30';
+          windowInput.value = alarm.windowMinutes;
+          windowInput.addEventListener('change', () => {
+            alarms[index].windowMinutes = Math.max(
+              0,
+              Math.min(30, parseInt(windowInput.value) || 0)
+            );
+          });
+          windowGroup.appendChild(windowLabel);
+          windowGroup.appendChild(windowInput);
+
+          // テキストフィールド
+          const textGroup = document.createElement('div');
+          textGroup.className = 'field-group field-text';
+          const textLabel = document.createElement('div');
+          textLabel.className = 'field-label';
+          textLabel.textContent = '表示テキスト';
+          const textInput = document.createElement('textarea');
+          textInput.className = 'input-text';
+          textInput.value = alarm.text;
+          textInput.placeholder = '画面に表示するメッセージ（Enterで改行）';
+          textInput.rows = 2;
+          textInput.addEventListener('input', () => {
+            alarms[index].text = textInput.value;
+          });
+          textGroup.appendChild(textLabel);
+          textGroup.appendChild(textInput);
+
+          // 削除ボタン
+          const deleteBtn = document.createElement('button');
+          deleteBtn.className = 'delete-btn';
+          deleteBtn.textContent = '×';
+          deleteBtn.title = '削除';
+          deleteBtn.addEventListener('click', () => {
+            alarms.splice(index, 1);
+            render();
+          });
+
+          item.appendChild(timeGroup);
+          item.appendChild(windowGroup);
+          item.appendChild(textGroup);
+          item.appendChild(deleteBtn);
+          list.appendChild(item);
+        });
+      }
+
+      document.getElementById('btn-add').addEventListener('click', () => {
+        alarms.push({
+          id: nextId++,
+          hour: 9,
+          minute: 0,
+          windowMinutes: 5,
+          text: '',
+        });
+        render();
+        // 新しい行のテキスト入力にフォーカス
+        const inputs = document.querySelectorAll('.input-text');
+        if (inputs.length > 0) {
+          inputs[inputs.length - 1].focus();
+        }
+      });
+
+      document.getElementById('btn-save').addEventListener('click', async () => {
+        await window.electronAPI.saveAlarms(alarms);
+        const msg = document.getElementById('saved-msg');
+        msg.classList.add('visible');
+        setTimeout(() => msg.classList.remove('visible'), 2500);
+      });
+
+      init();
+    </script>
+  </body>
+</html>
