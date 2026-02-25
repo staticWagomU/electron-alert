@@ -203,6 +203,14 @@ app.whenReady().then(() => {
     app.dock.hide();
   }
 
+  // パッケージ済みアプリの場合のみログイン項目に登録する
+  if (app.isPackaged) {
+    app.setLoginItemSettings({
+      openAtLogin: true,
+      openAsHidden: true,
+    });
+  }
+
   createTray();
   scheduleForToday();
 
