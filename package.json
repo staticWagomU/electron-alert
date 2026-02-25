@@ -1,5 +1,5 @@
 {
-  "name": "electron-todo-append",
+  "name": "electron-alert",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -8,7 +8,7 @@
     "build": "electron-builder --mac"
   },
   "build": {
-    "appId": "com.wagomu.electron-todo-append",
+    "appId": "com.wagomu.electron-alert",
     "productName": "TimeAlarm",
     "files": [
       "index.js",
